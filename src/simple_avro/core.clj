@@ -142,7 +142,7 @@
 ;
 
 ; Unpack multi method
-(defmulti unpack-avro (fn [schema obj] (.getName schema)))
+(defmulti unpack-avro (fn [schema obj] (.getName #^Schema schema)))
 
 (defmethod unpack-avro :default [schema obj] obj)
 

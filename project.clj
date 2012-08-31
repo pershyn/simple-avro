@@ -1,14 +1,10 @@
 (defproject simple-avro "0.0.5"
   :description "Clojure wrapper for Avro schema and serialization."
-  :url          "http://github.com/asmyczek/simple-avro"
+  :url          "http://github.com/roxxi/simple-avro"
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/data.json "0.1.2"]
-                 [org.apache.avro/avro "1.5.1"]]
-  :dev-dependencies [[lein-eclipse "1.0.0"]]
-  :disable-deps-clean false
+                 [org.apache.avro/avro "1.7.1"]]
   :warn-on-reflection true
-  :source-path "src"
-  :test-path "test"
   :license {:name "Apache License - Version 2.0"
             :url "http://www.apache.org/licenses/"})
 

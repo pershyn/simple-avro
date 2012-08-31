@@ -16,6 +16,7 @@
   :city    avro-string
   :state   State
   :zip     avro-int
+  :things (avro-array (avro-union avro-string avro-int))
   :country Country)
 
 (defavro-record Person
@@ -46,7 +47,8 @@
               "city"    "Wasco"
               "state"   "CA"
               "zip"     95171
-              "country" "USA"}
+              "things" [5 "hello"]
+              "country" "USA"}   
    "email"   "mike@home.com"
    "phone"   nil}])
 
