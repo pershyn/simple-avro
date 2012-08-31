@@ -88,10 +88,10 @@
                             (try
                             (let [record (GenericData$Record. schema)]
                               (doseq [#^String k ks]
-                                (let [field (.getField schema k)]
+                                (let [field (.getField schema (name k))]
                                   (when (nil? field)
                                     (throw (Exception. (str "Null field " k " schema " schema))))
-                                  (.put record k (pack (.schema field) (obj k)))))
+                                  (.put record (name k) (pack (.schema field) (obj k)))))
                               record)
                               (catch Exception e
                                 (throw (Exception. (str ">>> " schema " - " obj) e))))))

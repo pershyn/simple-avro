@@ -52,6 +52,18 @@
    "email"   "mike@home.com"
    "phone"   nil}])
 
+(def address-book2
+  [{"first"  "Mike"
+   "last"    "Foster"
+   "address" {"street"  "South Park Str. 14"
+              "city"    "Wasco"
+              "state"   "CA"
+              "zip"     95171
+              :things [5 "hello"]
+              "country" "USA"}   
+   "email"   "mike@home.com"
+   "phone"   nil}])
+
 ; Serialization
 
 (let [packed-address-book   (pack AddressBook address-book)
