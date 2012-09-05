@@ -64,9 +64,28 @@
    "email"   "mike@home.com"
    "phone"   nil}])
 
+(def address-book-keywords
+  [{:first  "Mike"
+    :last    "Foster"
+    :address {:street  "South Park Str. 14"
+              :city    "Wasco"
+              :state   "CA"
+              :zip     95171
+              :things [5 "hello"]
+              :country "USA"}   
+    :email   "mike@home.com"
+    :phone   nil}])
+ 
+
 ; Serialization
 
 (let [packed-address-book   (pack AddressBook address-book)
       unpacked-address-book (unpack AddressBook packed-address-book)]
   (assert (= address-book unpacked-address-book)))
 
+(let [packed-address-book-keywords   (pack AddressBook address-book-keywords)
+      unpacked-address-book-keywords
+      (unpack AddressBook packed-address-book-keywords :use-keywords true)]
+  (println address-book-keywords)
+  (println unpacked-address-book-keywords)
+  (assert (= address-book-keywords unpacked-address-book-keywords)))
