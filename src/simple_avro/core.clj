@@ -1,6 +1,7 @@
 (ns simple-avro.core
   {:doc "Core namespace defines serialization/de-serialization functions."}
   (:require (clojure.data [json :as json]))
+  (:use roxxi.utils.print)
   (:import (java.io FileOutputStream ByteArrayOutputStream ByteArrayInputStream)
            (org.apache.avro Schema Schema$Type Schema$Field)
            (org.apache.avro.generic GenericData$EnumSymbol
@@ -24,11 +25,11 @@
 ; Default implementations
 (extend-type Object
   AvroTypeable
-    (avro-pack [this] this))
-    
+  (avro-pack [this] this))
+
 (extend-type nil
   AvroTypeable
-    (avro-pack [_] nil))
+  (avro-pack [_] nil))
 
 (declare pack avro-schema)
 
@@ -148,7 +149,7 @@
 (defn pack
   [schema obj & [encoder]]
   (let [#^Schema schema (avro-schema schema)
-                 encode (or encoder (fn [_ obj] obj))
+                 encode (or encoder (fn default-encoder [_ obj] obj))
                  obj    (avro-pack obj)]
     (try
       (encode schema (pack-obj schema obj))
@@ -319,7 +320,7 @@
      
 
 (defn unpack
-  [schema obj & {:keys [decoder fields use-keywords] :or {:fields []}}]
+  [schema obj & {:keys [decoder fields use-keywords] :or {:fields [], :decoder false}}]
   (let [#^Schema schema   (avro-schema schema)
         decode   (or decoder (fn [_ obj] obj))
         obj      (decode schema obj)]
@@ -337,7 +338,7 @@
 (def json-decoder
   (fn json-decoder-fn [#^Schema schema obj]
     (decode-from schema obj
-      (fn decode-from-json [#^Schema schema #^String obj]
+                 (fn decode-from-json [#^Schema schema #^String obj]
         (let [is (ByteArrayInputStream. (.getBytes obj "UTF-8"))]
           (.jsonDecoder (DecoderFactory/get) schema obj))))))
 
