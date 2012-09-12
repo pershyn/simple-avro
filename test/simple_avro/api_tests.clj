@@ -1,7 +1,6 @@
 (ns simple-avro.api-tests
   (:use (simple-avro core schema api)
-        (clojure test)
-        (roxxi.utils print))
+        (clojure test))
   (:import (java.util Date UUID)))
 
 (deftest test-prim-types

@@ -83,10 +83,10 @@
     (is (= (unpack List (pack List recursive ~encoder) :decoder ~decoder) recursive))
     
     (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record ~encoder) :decoder ~decoder) nested-record))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record ~encoder) :decoder ~decoder [:f1]) {"f1" 10}))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record ~encoder) :decoder ~decoder [:f1 :f2]) {"f1" 10 "f2" {"f1" 20 "f2" "f2-f2"}}))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record ~encoder) :decoder ~decoder [[:f3 :f2]]) {"f3" {"f2" "f3-f2"}}))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record ~encoder) :decoder ~decoder [:f1 [:f3 :f2]]) {"f1" 10 "f3" {"f2" "f3-f2"}}))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record ~encoder) :decoder ~decoder :fields [:f1]) {"f1" 10}))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record ~encoder) :decoder ~decoder :fields [:f1 :f2]) {"f1" 10 "f2" {"f1" 20 "f2" "f2-f2"}}))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record ~encoder) :decoder ~decoder :fields [[:f3 :f2]]) {"f3" {"f2" "f3-f2"}}))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record ~encoder) :decoder ~decoder :fields [:f1 [:f3 :f2]]) {"f1" 10 "f3" {"f2" "f3-f2"}}))
 
   ))
 

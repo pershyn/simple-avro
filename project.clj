@@ -3,8 +3,7 @@
   :url          "http://github.com/roxxi/simple-avro"
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/data.json "0.1.2"]
-                 [org.apache.avro/avro "1.7.1"]
-                 [roxxi/clojure-common-utils "0.0.1"]]
+                 [org.apache.avro/avro "1.7.1"]]
   :warn-on-reflection true
   :license {:name "Apache License - Version 2.0"
             :url "http://www.apache.org/licenses/"})
