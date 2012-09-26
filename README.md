@@ -1,6 +1,7 @@
 # simple-avro
 Clojure wrapper for Avro schema and serialization.
 
+
 ## Quick Start
 
 ### Schema definition
@@ -23,7 +24,7 @@ Clojure wrapper for Avro schema and serialization.
       :email   avro-string
       :phone   (avro-union avro-string avro-null))
 
-_simple-avro_ implements all types defined in [Avro schema specification](http://avro.apache.org/docs/1.5.0/spec.html).
+_simple-avro_ implements all types defined in [Avro schema specification](http://avro.apache.org/docs/1.7.2/spec.html).
 Just prepend _avro-_ to the type name or use plain string names. _defavro-_ macros defined for all named types
 (_defavro-record_, _defavro-enum_ and _defavro-fixed_) create var objects convenient for hierarchical schema compositions.
 Parameters _namespace_, _aliases_ and _doc_ can by provided in an optional argument map. In recursive type definitions use 
@@ -73,16 +74,16 @@ For more details see examples and unit tests.
 
 ### Leiningen
 
-    [simple-avro/simple-avro "0.0.5"]
+    [roxxi/simple-avro "0.0.6"]
  
 ### Maven
 
     <dependency>
-      <groupId>simple-avro</groupId>
+      <groupId>roxxi</groupId>
       <artifactId>simple-avro</artifactId>
-      <version>0.0.5</version>
+      <version>0.0.6</version>
     </dependency>
 
 
-Found a bug? Have a question? Drop me an email at adam.smyczek \_at\_ gmail.com.
+Found a bug? Have a question? Drop me an email at roxxibear \_at\_ gmail.com.
 
