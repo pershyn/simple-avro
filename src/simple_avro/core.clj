@@ -115,7 +115,7 @@
 (defmethod pack-obj Schema$Type/MAP
   [#^Schema schema obj] 
   (let [type-schema (.getValueType schema)]
-    (reduce (fn [m [k v]] (assoc m k (pack type-schema v))) {} obj)))
+    (reduce (fn [m [k v]] (assoc m (name k) (pack type-schema v))) {} obj)))
 
 (defmethod pack-obj Schema$Type/RECORD
   [#^Schema schema obj]
