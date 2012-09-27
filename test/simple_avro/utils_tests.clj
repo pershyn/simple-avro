@@ -7,10 +7,10 @@
   "field2" avro-int)
 
 (def test-records
-  [{"field1" "record1" "field2" 10}
-   {"field1" "record2" "field2" 20}
-   {"field1" "record3" "field2" 30}
-   {"field1" "record4" "field2" 40}])
+  [{:field1 "record1" :field2 10}
+   {:field1 "record2" :field2 20}
+   {:field1 "record3" :field2 30}
+   {:field1 "record4" :field2 40}])
 
 (deftest spit-slurp-test
   (let [file    (java.io.File/createTempFile "avro-test-data", ".tmp")

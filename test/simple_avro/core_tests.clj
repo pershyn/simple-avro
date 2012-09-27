@@ -73,51 +73,51 @@
 
 (defn keyword-insensitive-tests
   [encoder decoder keywords]  
-  (is (= (unpack avro-null (pack avro-null nil  encoder) :decoder decoder :use-keywords keywords)       nil))
-  (is (= (unpack avro-null    (pack avro-null    5    encoder) :decoder decoder :use-keywords keywords) nil))
-  (is (= (unpack avro-boolean (pack avro-boolean true encoder) :decoder decoder :use-keywords keywords) true))
-  (is (= (unpack avro-int     (pack avro-int     5    encoder) :decoder decoder :use-keywords keywords) 5))
-  (is (= (unpack avro-long    (pack avro-long    10   encoder) :decoder decoder :use-keywords keywords) (long 10)))
-  (is (= (unpack avro-float   (pack avro-float   2.5  encoder) :decoder decoder :use-keywords keywords) (float 2.5)))
-  (is (= (unpack avro-double  (pack avro-double  2.5  encoder) :decoder decoder :use-keywords keywords) (double 2.5)))
-  (is (= (str (unpack avro-string (pack avro-string "test" encoder) :decoder decoder :use-keywords keywords))  "test"))
+  (is (= (unpack avro-null (pack avro-null nil  encoder) :decoder decoder :str-keys keywords)       nil))
+  (is (= (unpack avro-null    (pack avro-null    5    encoder) :decoder decoder :str-keys keywords) nil))
+  (is (= (unpack avro-boolean (pack avro-boolean true encoder) :decoder decoder :str-keys keywords) true))
+  (is (= (unpack avro-int     (pack avro-int     5    encoder) :decoder decoder :str-keys keywords) 5))
+  (is (= (unpack avro-long    (pack avro-long    10   encoder) :decoder decoder :str-keys keywords) (long 10)))
+  (is (= (unpack avro-float   (pack avro-float   2.5  encoder) :decoder decoder :str-keys keywords) (float 2.5)))
+  (is (= (unpack avro-double  (pack avro-double  2.5  encoder) :decoder decoder :str-keys keywords) (double 2.5)))
+  (is (= (str (unpack avro-string (pack avro-string "test" encoder) :decoder decoder :str-keys keywords))  "test"))
   
-  (is (= (unpack bool-array (pack bool-array [true false false] encoder) :decoder decoder :use-keywords keywords) [true false false]))
+  (is (= (unpack bool-array (pack bool-array [true false false] encoder) :decoder decoder :str-keys keywords) [true false false]))
        
-  (is (= (unpack a-union (pack a-union "test" encoder) :decoder decoder :use-keywords keywords) "test"))
-  (is (= (unpack a-union (pack a-union 10 encoder) :decoder decoder :use-keywords keywords) 10))
+  (is (= (unpack a-union (pack a-union "test" encoder) :decoder decoder :str-keys keywords) "test"))
+  (is (= (unpack a-union (pack a-union 10 encoder) :decoder decoder :str-keys keywords) 10))
   
-  (let [pu (unpack MyFixed (pack MyFixed (byte-array [(byte 1) (byte 2)]) encoder) :decoder decoder :use-keywords keywords)]
+  (let [pu (unpack MyFixed (pack MyFixed (byte-array [(byte 1) (byte 2)]) encoder) :decoder decoder :str-keys keywords)]
        (is (= (nth pu 0) 1))
        (is (= (nth pu 1) 2)))
   
-  (is (= (unpack MyEnum (pack MyEnum "A" encoder) :decoder decoder :use-keywords keywords) "A"))
-  (is (= (unpack MyEnum (pack MyEnum "B" encoder) :decoder decoder :use-keywords keywords) "B"))
-  (is (= (unpack MyEnum (pack MyEnum "C" encoder) :decoder decoder :use-keywords keywords) "C")))
+  (is (= (unpack MyEnum (pack MyEnum "A" encoder) :decoder decoder :str-keys keywords) "A"))
+  (is (= (unpack MyEnum (pack MyEnum "B" encoder) :decoder decoder :str-keys keywords) "B"))
+  (is (= (unpack MyEnum (pack MyEnum "C" encoder) :decoder decoder :str-keys keywords) "C")))
     
 (defn keyword-sensitive-tests
   [encoder decoder]
 
-  (is (= (unpack int-map (pack int-map simple-int-map encoder) :decoder decoder :use-keywords false) simple-int-map))
-  (is (= (unpack int-map (pack int-map simple-int-map encoder) :decoder decoder :use-keywords true) keyword-int-map))
-  (is (= (unpack int-map (pack int-map keyword-int-map encoder) :decoder decoder :use-keywords false) simple-int-map))
-  (is (= (unpack int-map (pack int-map keyword-int-map encoder) :decoder decoder :use-keywords true) keyword-int-map))
+  (is (= (unpack int-map (pack int-map simple-int-map encoder) :decoder decoder :str-key true) simple-int-map))
+  (is (= (unpack int-map (pack int-map simple-int-map encoder) :decoder decoder :str-key false) keyword-int-map))
+  (is (= (unpack int-map (pack int-map keyword-int-map encoder) :decoder decoder :str-key true) simple-int-map))
+  (is (= (unpack int-map (pack int-map keyword-int-map encoder) :decoder decoder :str-key false) keyword-int-map))
   
-  (is (= (unpack List (pack List recursive encoder) :decoder decoder :use-keywords false) recursive))
-  (is (= (unpack List (pack List (keywordify-keys recursive) encoder) :decoder decoder :use-keywords true) (keywordify-keys recursive)))
-  (is (= (unpack List (pack List recursive encoder) :decoder decoder :use-keywords true) (keywordify-keys recursive)))
-  (is (= (unpack List (pack List (keywordify-keys recursive) encoder) :decoder decoder :use-keywords false) recursive))
+  (is (= (unpack List (pack List recursive encoder) :decoder decoder :str-key true) recursive))
+  (is (= (unpack List (pack List (keywordify-keys recursive) encoder) :decoder decoder :str-key false) (keywordify-keys recursive)))
+  (is (= (unpack List (pack List recursive encoder) :decoder decoder :str-key false) (keywordify-keys recursive)))
+  (is (= (unpack List (pack List (keywordify-keys recursive) encoder) :decoder decoder :str-key true) recursive))
 
-  (let [pu (unpack MyRecord (pack MyRecord {"f1" 6 "f2" "test"} encoder) :decoder decoder :use-keywords true)]
+  (let [pu (unpack MyRecord (pack MyRecord {"f1" 6 "f2" "test"} encoder) :decoder decoder :str-key false)]
     (is (= (pu :f1) 6))
     (is (= (pu :f2) "test")))
-  (let [pu (unpack MyRecord (pack MyRecord {:f1 6 :f2 "test"} encoder) :decoder decoder :use-keywords true)]
+  (let [pu (unpack MyRecord (pack MyRecord {:f1 6 :f2 "test"} encoder) :decoder decoder :str-key false)]
     (is (= (pu :f1) 6))
     (is (= (pu :f2) "test")))  
-  (let [pu (unpack MyRecord (pack MyRecord {"f1" 6 "f2" "test"} encoder) :decoder decoder :use-keywords false)]
+  (let [pu (unpack MyRecord (pack MyRecord {"f1" 6 "f2" "test"} encoder) :decoder decoder :str-key true)]
     (is (= (pu "f1") 6))
     (is (= (pu "f2") "test")))
-  (let [pu (unpack MyRecord (pack MyRecord {:f1 6 :f2 "test"} encoder) :decoder decoder :use-keywords false)]
+  (let [pu (unpack MyRecord (pack MyRecord {:f1 6 :f2 "test"} encoder) :decoder decoder :str-key true)]
     (is (= (pu "f1") 6))
     (is (= (pu "f2") "test")))
 
@@ -129,50 +129,50 @@
                  {"f1" 10 "f3" {"f2" "f3-f2"}}]
         key-results (vec (map keywordify-keys results))]
     ;; string-keyed record, keyword unpacking
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords true) (key-results 0)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords true :fields [:f1]) (key-results 1)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords true :fields [:f1 :f2]) (key-results 2)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords true :fields [[:f3 :f2]]) (key-results 3)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords true :fields [:f1 [:f3 :f2]]) (key-results 4)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key false) (key-results 0)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key false :fields [:f1]) (key-results 1)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key false :fields [:f1 :f2]) (key-results 2)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key false :fields [[:f3 :f2]]) (key-results 3)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key false :fields [:f1 [:f3 :f2]]) (key-results 4)))
     ;; keyword-keyed record, keyword unpacking
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords true) (key-results 0)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords true :fields [:f1]) (key-results 1)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords true :fields [:f1 :f2]) (key-results 2)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords true :fields [[:f3 :f2]]) (key-results 3)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords true :fields [:f1 [:f3 :f2]]) (key-results 4)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key false) (key-results 0)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key false :fields [:f1]) (key-results 1)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key false :fields [:f1 :f2]) (key-results 2)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key false :fields [[:f3 :f2]]) (key-results 3)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key false :fields [:f1 [:f3 :f2]]) (key-results 4)))
     ;; string-keyed record, string unpacking
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords false) (results 0)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords false :fields [:f1]) (results 1)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords false :fields [:f1 :f2]) (results 2)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords false :fields [[:f3 :f2]]) (results 3)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords false :fields [:f1 [:f3 :f2]]) (results 4)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key true) (results 0)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key true :fields [:f1]) (results 1)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key true :fields [:f1 :f2]) (results 2)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key true :fields [[:f3 :f2]]) (results 3)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key true :fields [:f1 [:f3 :f2]]) (results 4)))
     ;; keyword-keyed record, string unpacking
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords false) (results 0)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords false :fields [:f1]) (results 1)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords false :fields [:f1 :f2]) (results 2)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords false :fields [[:f3 :f2]]) (results 3)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords false :fields [:f1 [:f3 :f2]]) (results 4)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key true) (results 0)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key true :fields [:f1]) (results 1)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key true :fields [:f1 :f2]) (results 2)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key true :fields [[:f3 :f2]]) (results 3)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key true :fields [:f1 [:f3 :f2]]) (results 4)))
 
     ;; ## Test the fields specified as strings
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords true :fields ["f1"]) (key-results 1)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords true :fields ["f1" "f2"]) (key-results 2)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords true :fields [["f3" "f2"]]) (key-results 3)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords true :fields ["f1" ["f3" "f2"]]) (key-results 4)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key false :fields ["f1"]) (key-results 1)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key false :fields ["f1" "f2"]) (key-results 2)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key false :fields [["f3" "f2"]]) (key-results 3)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key false :fields ["f1" ["f3" "f2"]]) (key-results 4)))
     ;; keyword-keyed record, keyword unpacking
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords true :fields ["f1"]) (key-results 1)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords true :fields ["f1" "f2"]) (key-results 2)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords true :fields [["f3" "f2"]]) (key-results 3)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords true :fields ["f1" ["f3" "f2"]]) (key-results 4)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key false :fields ["f1"]) (key-results 1)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key false :fields ["f1" "f2"]) (key-results 2)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key false :fields [["f3" "f2"]]) (key-results 3)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key false :fields ["f1" ["f3" "f2"]]) (key-results 4)))
     ;; string-keyed record, string unpacking
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords false :fields ["f1"]) (results 1)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords false :fields ["f1" "f2"]) (results 2)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords false :fields [["f3" "f2"]]) (results 3)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :use-keywords false :fields ["f1" ["f3" "f2"]]) (results 4)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key true :fields ["f1"]) (results 1)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key true :fields ["f1" "f2"]) (results 2)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key true :fields [["f3" "f2"]]) (results 3)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord nested-record encoder) :decoder decoder :str-key true :fields ["f1" ["f3" "f2"]]) (results 4)))
     ;; keyword-keyed record, string unpacking
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords false :fields ["f1"]) (results 1)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords false :fields ["f1" "f2"]) (results 2)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords false :fields [["f3" "f2"]]) (results 3)))
-    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :use-keywords false :fields ["f1" ["f3" "f2"]]) (results 4))))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key true :fields ["f1"]) (results 1)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key true :fields ["f1" "f2"]) (results 2)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key true :fields [["f3" "f2"]]) (results 3)))
+    (is (= (unpack MyNestedRecord (pack MyNestedRecord keyword-nested-record encoder) :decoder decoder :str-key true :fields ["f1" ["f3" "f2"]]) (results 4))))
 )
 
 (defmacro test-pack-unpack

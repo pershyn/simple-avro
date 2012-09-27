@@ -1,5 +1,25 @@
 # simple-avro
+
 Clojure wrapper for Avro schema and serialization.
+
+## Note
+Since [asmyczek](https://github.com/asmyczek/simple-avro) seems to have abandoned maintaining this project, I have taken it over in order to continue to develop this library.
+
+At the time of writing, the biggest difference between [asmyczek](https://github.com/asmyczek/simple-avro)'s state and mine is that I've added full keyword integration so that now you can have avro objects unpacked with keys as keywords instead of strings. I have updated the documentation below to reflect this additional feature.
+
+
+## Changelog
+
+### 0.0.6
+
+* By default keywords will be used when deserializing maps, records, and the like. Effectively, anything that is turned from an avro-type into a clojure map-type will use keywords as keys. __NOTE__ this may break current implementations which rely upon string keys.
+* Updated to work with [Avro 1.7.2](avro.apache.org/docs/1.7.2/spec.html).
+
+
+### 0.0.5
+
+* Forked from [asmyczek](https://github.com/asmyczek/simple-avro) since it appears to be abandon.
+
 
 
 ## Quick Start
@@ -36,14 +56,27 @@ string names for type references, for example:
 
 ### Data serialization
 
-    (def contact {:first "Mike" :last ...})
+    (def contact {:first "Mike" :last "Smith" ...})
     (def packed (pack Contact contact <optional encoder>))
-    (assert (= contact (unpack Contact packed <optional decoder>)))
+    (assert (= contact (unpack Contact packed)))
 
 _pack_ serializes objects into generic Avro objects. For json or binary serialization provide an optional _json-encoder_ or _binary-encoder_.
-Use equivalent decoder to de-serialize objects using _unpack_.  _unpack_ takes an optional list of fields to deserialize from a record.
-Use singe filed names or path vectors for nested records, for example _[:first [:address :city]]_ will deserialize only
+
+
+_unpack_ deserializes Avro objects into clojure primitives. _unpack_ takes several optional keyword arguments:
+
+* `:fields` an optional list of fields to deserialize from a record. Use single filed names or path vectors for nested records, for example _[:first [:address :city]]_ will deserialize only
 the two fields first and city. If no fields provided, the entire record is deserialized. 
+* `:decoder` analgous to the optional _encoder_ specified in pack, a specified decoder will be used to de-serialize objects.
+* `:str-key` if set to `true` will unpack an object into a Clojure map structure where ever key is a string instead of a keyword.
+For example, the following assertion is true:
+
+    (def contact {"first" "Mike" "last" "Smith" ...})
+    (def packed (pack Contact contact <optional encoder>))
+    (assert (= contact (unpack Contact packed :use-keywords false)))
+    
+Note, that it doesn't matter whether keys are strings or keywords when packing an object. __Note:__ this would be equivalent to the 0.0.5 and prior behaviors.
+
 
 ### Custom types API
 

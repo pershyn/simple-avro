@@ -318,11 +318,11 @@
     
 
 (defn- unpacker-key-maker
-  "If we should make keyword keys, we will, otherwise, we'll just 'toString' the thing"
-  [should-make-keyword-keys?]
-  (if should-make-keyword-keys?
-    #(keyword (str %))
-    str))
+  "If we should make string keys, we will, otherwise, we'll make keyword keys"
+  [should-make-string-keys?]
+  (if should-make-string-keys?
+    str
+    #(keyword (str %))))
 
 (defn- record-schema?
   [#^Schema schema]
@@ -343,18 +343,18 @@
     as demonstrated in the second element above, this is treated as a property
     path (e.g. field2.innerfield)
   - :use-keywords
-    If specified as true, the result map will be generated with keywords as keys
-    for property names as opposed to Strings
+    If specified as false, the result map will be generated with strings as keys
+    for property names as opposed to keywords
   - :decoder
     a function to decode an un-avroed property, perhaps into something that can be
     manipulated in code further down."
   [schema obj
-   & {:keys [decoder fields use-keywords]
-      :or {:fields [], :decoder false, :use-keywords false}}]
+   & {:keys [decoder fields str-key]
+      :or {:fields [], :decoder false, :str-key false}}]
   (let [#^Schema schema   (avro-schema schema)
         decode   (or decoder (fn [_ obj] obj))
         obj      (decode schema obj)
-        key-maker (unpacker-key-maker use-keywords)]
+        key-maker (unpacker-key-maker str-key)]
     (try
       (if (and fields (record-schema? schema))
         ;; pathify fields for uniformity

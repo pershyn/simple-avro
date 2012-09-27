@@ -1,5 +1,6 @@
-(ns examples.address-book
-  (:use (simple-avro schema core)))
+(ns simple-avro.address-test
+  (:use (simple-avro schema core)
+        (clojure test)))
 
 ; Schema
 
@@ -80,22 +81,23 @@
  
 
 ;; Serializationa
+(deftest addressbook-test
+  []
+  (let [packed-address-book (pack AddressBook address-book)
+        unpacked-address-book (unpack AddressBook packed-address-book)]
+    (is (= address-book unpacked-address-book)))
 
-(let [packed-address-book (pack AddressBook address-book)
-      unpacked-address-book (unpack AddressBook packed-address-book)]
-  (assert (= address-book unpacked-address-book)))
-
-(let [packed-address-book-string   (pack AddressBook address-book-string)
-      unpacked-address-book-string
-      (unpack AddressBook packed-address-book-string :str-key true)]
-  (assert (= address-book-string unpacked-address-book-string)))
-
-;; doesn't matter if I mix keyword keys and string keys
-(let [packed-address-book-mixed   (pack AddressBook address-book-mixed)
-      unpacked-address-book-mixed (unpack AddressBook packed-address-book-mixed)]
-  (assert (= address-book unpacked-address-book-mixed)))
-
-(let [packed-address-book-mixed   (pack AddressBook address-book-mixed)
-      unpacked-address-book-mixed (unpack AddressBook packed-address-book-mixed :str-key true)]
-  (assert (= address-book-string unpacked-address-book-mixed)))
-
+  (let [packed-address-book-string   (pack AddressBook address-book-string)
+        unpacked-address-book-string
+        (unpack AddressBook packed-address-book-string :str-key true)]
+    (is (= address-book-string unpacked-address-book-string)))
+  
+  ;; doesn't matter if I mix keyword keys and string keys
+  (let [packed-address-book-mixed   (pack AddressBook address-book-mixed)
+        unpacked-address-book-mixed (unpack AddressBook packed-address-book-mixed)]
+    (is (= address-book unpacked-address-book-mixed)))
+  
+  (let [packed-address-book-mixed   (pack AddressBook address-book-mixed)
+        unpacked-address-book-mixed (unpack AddressBook packed-address-book-mixed :str-key true)]
+    (is (= address-book-string unpacked-address-book-mixed))))
+  
