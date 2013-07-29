@@ -1,7 +1,7 @@
 (ns simple-avro.utils
   {:doc "General utils."}
   (:use (simple-avro core))
-  (:require (clojure.contrib [json :as json]))
+  (:require (clojure.data [json :as json]))
   (:import (org.apache.avro Schema Schema$Type)
            (org.apache.avro.file CodecFactory
                                  DataFileStream
@@ -106,6 +106,10 @@
   "Closable protocol."
   (close [this] "Close underlying closable."))
 
+(defprotocol Syncable
+    "Syncable protocol."
+    (sync [this] "Sync object."))
+
 (defprotocol Writer
   "General writer protocol."
   (write        [this obj] "Write object."))
@@ -120,6 +124,9 @@
       Writer
       (write [this obj]
              (.append writer (pack schema obj)))
+      Syncable
+      (sync [this]
+            (.flush writer))
       Closable
       (close [this]
              (.flush writer)

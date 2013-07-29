@@ -1,6 +1,6 @@
 (ns simple-avro.core
   {:doc "Core namespace defines serialization/de-serialization functions."}
-  (:require (clojure.contrib [json :as json]))
+  (:require (clojure.data [json :as json]))
   (:import (java.io FileOutputStream ByteArrayOutputStream ByteArrayInputStream)
            (org.apache.avro Schema Schema$Type Schema$Field)
            (org.apache.avro.generic GenericData$EnumSymbol
@@ -43,7 +43,7 @@
 
 (def #^{:private true}
   *packers*
-  {Schema$Type/NULL     (fn pack-nil     [#^Schema schema obj] nil)
+  {Schema$Type/NULL     (fn pack-nil     [#^Schema schema obj] (if (nil? obj) nil (throw (Exception. (str "'" obj "' is not nil")))))
    Schema$Type/BOOLEAN  (fn pack-boolean [#^Schema schema obj] (boolean obj)) 
    Schema$Type/INT      (fn pack-int     [#^Schema schema obj] (int obj))
    Schema$Type/LONG     (fn pack-long    [#^Schema schema obj] (long obj))
@@ -66,12 +66,17 @@
                           (loop [schemas (seq (.getTypes schema))]
                             (if (empty? schemas)
                               (throw-with-log "No union type defined for object '" obj "'.")
-                              (let [rec (try
-                                          (pack (first schemas) obj)
-                                          (catch Exception e :not-matching-untion-type))] 
-                                (if (not= rec :not-matching-untion-type)
-                                  rec
-                                  (recur (next schemas)))))))
+                              (let [#^Schema schema (first schemas)]
+                                (if (= (.getType schema) Schema$Type/NULL)
+                                  (if (nil? obj)
+                                    nil
+                                    (recur (next schemas)))
+                                  (let [rec (try 
+                                              (pack schema obj)
+                                              (catch Exception e :not-matching-union-type))]
+                                    (if (= rec :not-matching-union-type)
+                                      (recur (next schemas))
+                                      rec)))))))
 
    Schema$Type/ARRAY    (fn pack-array [#^Schema schema obj] 
                           (let [type-schema (.getElementType schema)
@@ -81,7 +86,7 @@
 
    Schema$Type/MAP      (fn pack-map [#^Schema schema obj] 
                           (let [type-schema (.getValueType schema)]
-                            (reduce (fn [m [k v]] (assoc m k (pack type-schema v))) {} obj)))
+                            (persistent! (reduce (fn [m [k v]] (assoc! m k (pack type-schema v))) (transient {}) obj))))
 
    Schema$Type/RECORD   (fn pack-record [#^Schema schema obj]
                           (if-let [ks (keys obj)]
@@ -274,7 +279,7 @@
 ; Avro schema generation
 ;
 
-(def named-types nil)
+(def ^:dynamic named-types nil)
 
 (defn- traverse-schema
   "Traverse types of a schema."
