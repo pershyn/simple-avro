@@ -49,7 +49,7 @@
               :state   "CA"
               :zip     95171
               :things [5 "hello"]
-              :country "USA"}   
+              :country "USA"}
     :email   "mike@home.com"
     :phone   nil}])
 
@@ -61,7 +61,7 @@
               "state"   "CA"
               "zip"     95171
               "things" [5 "hello"]
-              "country" "USA"}   
+              "country" "USA"}
    "email"   "mike@home.com"
    "phone"   nil}])
 
@@ -73,14 +73,11 @@
                "state"   "CA"
                "zip"     95171
                :things [5 "hello"]
-               "country" "USA"}   
+               "country" "USA"}
     "email"   "mike@home.com"
     :phone   nil}])
 
-
- 
-
-;; Serializationa
+;; Serializations
 (deftest addressbook-test
   []
   (let [packed-address-book (pack AddressBook address-book)
@@ -91,13 +88,15 @@
         unpacked-address-book-string
         (unpack AddressBook packed-address-book-string :str-key true)]
     (is (= address-book-string unpacked-address-book-string)))
-  
+
   ;; doesn't matter if I mix keyword keys and string keys
   (let [packed-address-book-mixed   (pack AddressBook address-book-mixed)
-        unpacked-address-book-mixed (unpack AddressBook packed-address-book-mixed)]
+        unpacked-address-book-mixed (unpack AddressBook
+                                            packed-address-book-mixed)]
     (is (= address-book unpacked-address-book-mixed)))
-  
+
   (let [packed-address-book-mixed   (pack AddressBook address-book-mixed)
-        unpacked-address-book-mixed (unpack AddressBook packed-address-book-mixed :str-key true)]
+        unpacked-address-book-mixed (unpack AddressBook
+                                            packed-address-book-mixed
+                                            :str-key true)]
     (is (= address-book-string unpacked-address-book-mixed))))
-  

@@ -48,7 +48,7 @@
               :state   "CA"
               :zip     95171
               :things [5 "hello"]
-              :country "USA"}   
+              :country "USA"}
     :email   "mike@home.com"
     :phone   nil}])
 
@@ -60,7 +60,7 @@
               "state"   "CA"
               "zip"     95171
               "things" [5 "hello"]
-              "country" "USA"}   
+              "country" "USA"}
    "email"   "mike@home.com"
    "phone"   nil}])
 
@@ -72,11 +72,9 @@
                "state"   "CA"
                "zip"     95171
                :things [5 "hello"]
-               "country" "USA"}   
+               "country" "USA"}
     "email"   "mike@home.com"
     :phone   nil}])
-
-
 
 
 ;; Serializations
@@ -92,11 +90,14 @@
       (unpack AddressBook packed-address-book-string :str-key true)]
   (assert (= address-book-string unpacked-address-book-string)))
 
-;; mixed keywords and strings version - doesn't matter if string and keys are mixed
+;; mixed keywords and strings version
 (let [packed-address-book-mixed   (pack AddressBook address-book-mixed)
-      unpacked-address-book-mixed (unpack AddressBook packed-address-book-mixed)]
+      unpacked-address-book-mixed (unpack AddressBook
+                                          packed-address-book-mixed)]
   (assert (= address-book unpacked-address-book-mixed)))
 
 (let [packed-address-book-mixed   (pack AddressBook address-book-mixed)
-      unpacked-address-book-mixed (unpack AddressBook packed-address-book-mixed :str-key true)]
+      unpacked-address-book-mixed (unpack AddressBook
+                                          packed-address-book-mixed
+                                          :str-key true)]
   (assert (= address-book-string unpacked-address-book-mixed)))

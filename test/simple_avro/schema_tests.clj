@@ -10,7 +10,7 @@
   (is (= avro-float   {:type "float"}))
   (is (= avro-double  {:type "double"}))
   (is (= avro-bytes   {:type "bytes"}))
-  (is (= avro-string  {:type "string"}))) 
+  (is (= avro-string  {:type "string"})))
 
 (deftest test-complex-types
   (is (= (avro-array avro-int) {:type "array" :items {:type "int"}}))
@@ -53,7 +53,10 @@
   (is (= (avro-fixed "MyFixed" 16 {:namespace "test-namespace"})
          {:type "fixed" :size 16 :name "MyFixed" :namespace "test-namespace"}))
   (is (= (avro-enum "MyEnum" {:namespace "test-namespace"} "A" "B" "C")
-         {:type "enum" :symbols ["A" "B" "C"] :name "MyEnum" :namespace "test-namespace"}))
+         {:type "enum"
+          :symbols ["A" "B" "C"]
+          :name "MyEnum"
+          :namespace "test-namespace"}))
   (is (= (avro-record "MyRecord" {:namespace "test-namespace"}
             "f1" avro-int
             "f2" avro-string)
@@ -62,4 +65,3 @@
           :namespace "test-namespace"
           :fields [{:name "f1" :type {:type "int"}}
                    {:name "f2" :type {:type "string"}}]})))
-

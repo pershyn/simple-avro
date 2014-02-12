@@ -50,11 +50,11 @@
   "f3" MyRecord)
 
 (defavro-record List
-  "value" avro-int 
+  "value" avro-int
   "next"  (avro-union "List" avro-null))
 
-(def recursive 
-  {"value" 1 
+(def recursive
+  {"value" 1
    "next"  {"value" 2
             "next"  {"value" 3
                      "next"  nil}}})
@@ -74,7 +74,7 @@
 
 
 (defn keyword-insensitive-tests
-  [encoder decoder keywords]  
+  [encoder decoder keywords]
   (is (= (unpack avro-null (pack avro-null nil  encoder) :decoder decoder :str-keys keywords)       nil))
   (is (= (unpack avro-null    (pack avro-null    5    encoder) :decoder decoder :str-keys keywords) nil))
   (is (= (unpack avro-boolean (pack avro-boolean true encoder) :decoder decoder :str-keys keywords) true))
@@ -83,23 +83,23 @@
   (is (= (unpack avro-float   (pack avro-float   2.5  encoder) :decoder decoder :str-keys keywords) (float 2.5)))
   (is (= (unpack avro-double  (pack avro-double  2.5  encoder) :decoder decoder :str-keys keywords) (double 2.5)))
   (is (= (str (unpack avro-string (pack avro-string "test" encoder) :decoder decoder :str-keys keywords))  "test"))
-  
+
   (is (= (unpack bool-array (pack bool-array [true false false] encoder) :decoder decoder :str-keys keywords) [true false false]))
-       
+
   (is (= (unpack a-union (pack a-union "test" encoder) :decoder decoder :str-keys keywords) "test"))
   (is (= (unpack a-union (pack a-union 10 encoder) :decoder decoder :str-keys keywords) 10))
 
   (is (= (unpack a-n-union (pack a-n-union "test" encoder) :decoder decoder :str-keys keywords) "test"))
   (is (= (unpack a-n-union (pack a-n-union 10 encoder) :decoder decoder :str-keys keywords) 10))
-  
+
   (let [pu (unpack MyFixed (pack MyFixed (byte-array [(byte 1) (byte 2)]) encoder) :decoder decoder :str-keys keywords)]
        (is (= (nth pu 0) 1))
        (is (= (nth pu 1) 2)))
-  
+
   (is (= (unpack MyEnum (pack MyEnum "A" encoder) :decoder decoder :str-keys keywords) "A"))
   (is (= (unpack MyEnum (pack MyEnum "B" encoder) :decoder decoder :str-keys keywords) "B"))
   (is (= (unpack MyEnum (pack MyEnum "C" encoder) :decoder decoder :str-keys keywords) "C")))
-    
+
 (defn keyword-sensitive-tests
   [encoder decoder]
 
@@ -191,4 +191,3 @@
 (test-pack-unpack test-prim-types-pack-unpack-no-decoder nil nil)
 (test-pack-unpack test-prim-types-pack-unpack-json json-encoder json-decoder)
 (test-pack-unpack test-prim-types-pack-unpack-binary binary-encoder binary-decoder)
-

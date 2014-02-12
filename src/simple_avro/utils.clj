@@ -58,7 +58,7 @@
         #^DataFileReader reader (DataFileReader. file (GenericDatumReader.))
         #^Schema         schema (.getSchema reader)
         read-next (fn read-next [#^DataFileReader reader]
-                    (lazy-seq 
+                    (lazy-seq
                       (if (.hasNext reader)
                         (cons (unpack schema (.next reader)) (read-next reader))
                         (do
@@ -75,7 +75,7 @@
       (if (nil? k)
         mta
         (recur ks (assoc mta k (String. (.getMeta reader k) "UTF-8")))))))
-      
+
 ;
 ; Custom file handling
 ;
@@ -117,8 +117,10 @@
 (defn avro-writer
   [os schema]
   (let [#^Schema       schema (avro-schema schema)
-        #^OutputStream os     (output-stream os) 
-                       writer (doto (DataFileWriter. (GenericDatumWriter. schema))
+        #^OutputStream os     (output-stream os)
+                       writer (doto (DataFileWriter.
+                                      (GenericDatumWriter.
+                                        schema))
                                 (.create schema os))]
     (reify
       Writer

@@ -14,14 +14,14 @@
    {"field1" "record3" "field2" 30 "field3" (java.util.Date. )}
    {"field1" "record4" "field2" 40 "field3" (java.util.Date. )}])
 
-
 ;
 ; Reader/writer example
 ;
 
 (defn write-read-data
   []
-  (let [tmp-file (.getAbsolutePath (java.io.File/createTempFile "test" ".avro"))]
+  (let [tmp-file (.getAbsolutePath (java.io.File/createTempFile "test"
+                                                                ".avro"))]
     (let [writer   (avro-writer tmp-file Test)]
       (println "Creating temp file " tmp-file)
       (doseq [rec (apply concat (repeat 1000 test-records))]

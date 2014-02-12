@@ -13,7 +13,7 @@
            (org.apache.avro.util Utf8)))
 
 ;
-; Encoding 
+; Encoding
 ;
 
 ; Typabe protocol to convert custom types to Avro compatible format,
@@ -103,9 +103,8 @@
           ;; For example we have a schema with [NULL, Real-type]. When trying to
           ;; determine data type to pack data into union - NULL always works
           ;; because it is present in schemas and we can pack anything to NULL..
-          ;; So need to check if the passed data is really NULL.
-          (if (nil? obj)
-            nil
+          ;; So need to skip this step if the passed data is NOT NULL.
+          (when-not (nil? obj)
             (recur (next schemas)))
           (let [rec (try
                       (pack schema obj)
@@ -163,7 +162,8 @@
     (try
       (encode schema (pack-obj schema obj))
       (catch Exception e
-        (throw-with-log "Exception reading object '" obj "' for schema '" schema "'." e)))))
+        (throw-with-log "Exception reading object '" obj
+                        "' for schema '" schema "'." e)))))
 
 ;;
 ;; Encoders
@@ -280,7 +280,8 @@
     (reduce
       (fn [m #^Schema$Field f]
         (let [k (.name f)]
-          (assoc! m (make-key k) (unpack-impl (.schema f) (.get obj k) make-key))))
+          (assoc! m (make-key k)
+                  (unpack-impl (.schema f) (.get obj k) make-key))))
       (transient {}) (.getFields schema))))
 
 (defmethod unpack-obj :default
@@ -294,15 +295,15 @@
 (defn- unpack-particular-field-path
   [#^Schema schema #^GenericData$Record obj make-key field-path]
   (let [[field & rest-fields] field-path]
-    (if (not field)
+    (if-not field
       (unpack-impl schema obj make-key)
       (let [field-name (name field)]
         (if-let [#^Schema$Field fd (.getField schema field-name)]
           `{~(make-key field-name)
             ~(unpack-particular-field-path
                (.schema fd) (.get obj (.name fd)) make-key rest-fields)}
-          (throw-with-log
-            "No field for name '" field-name "' exists in schema " (json-schema schema)))))))
+          (throw-with-log "No field for name '" field-name
+                          "' exists in schema " (json-schema schema)))))))
 
 (defn- deep-merge
   "like merge... but more recursive"
@@ -311,14 +312,16 @@
     (merge-with deep-merge v1 v2)
     v2))
 
-;; This is probably un-optimal, but it sure made the code a lot simpler to manage
+;; This is probably un-optimal, but it made the code a lot simpler to manage
 (defn- unpack-particular-field-paths
   "We assume that field-paths here have already been pathified. We also assume
    the paths are unique, otherwise, the last one processed will win."
   [#^Schema schema #^GenericData$Record rec make-key field-paths]
   (apply
-    (partial merge-with deep-merge) ;; deep-merge will merge sub maps at corresponding locations
-    (map (partial unpack-particular-field-path schema rec make-key) field-paths)))
+    ;; deep-merge will merge sub maps at corresponding locations
+    (partial merge-with deep-merge)
+    (map (partial unpack-particular-field-path schema rec make-key)
+         field-paths)))
 
 (defn- unpacker-key-maker
   "If we should make string keys, we will, otherwise, we'll make keyword keys"
@@ -349,8 +352,8 @@
     If specified as false, the result map will be generated with strings as keys
     for property names as opposed to keywords
   - :decoder
-    a function to decode an un-avroed property, perhaps into something that can be
-    manipulated in code further down."
+    a function to decode an un-avroed property, perhaps into something that
+    can be manipulated in code further down."
   [schema obj
    & {:keys [decoder fields str-key]
       :or {:fields [], :decoder false, :str-key false}}]
@@ -361,10 +364,12 @@
     (try
       (if (and fields (record-schema? schema))
         ;; pathify fields for uniformity
-        (unpack-particular-field-paths schema obj key-maker (map pathify fields))
+        (unpack-particular-field-paths schema obj key-maker (map pathify
+                                                                 fields))
         (unpack-impl schema obj key-maker))
       (catch Exception e
-        (throw-with-log "Exception unpacking object '" obj "' for schema '" schema "'." e)))))
+        (throw-with-log "Exception unpacking object '" obj
+                        "' for schema '" schema "'." e)))))
 
 (defn- decode-from
   [schema obj decoder]
@@ -395,7 +400,7 @@
   [type f]
   `(defmethod unpack-avro ~(str type) [s# o#] (~f o#)))
 
-; 
+;
 ; Avro schema generation
 ;
 
@@ -404,15 +409,16 @@
 (defn- traverse-schema
   "Traverse types of a schema."
   [schema f]
-  (cond 
+  (cond
     (vector? schema)
-      (vec (map #(f %) schema))
+      (vec (map f schema))
 
     (map? schema)
       (case (:type schema)
-        "array"   (assoc schema :items (f (:items schema)))
-        "map"     (assoc schema :values (f (:values schema)))
-        "record"  (assoc schema :fields (vec (map #(assoc % :type (f (:type %))) (:fields schema))))
+        "array" (update-in schema [:items] f)
+        "map"  (update-in schema [:values] f)
+        "record"  (assoc schema :fields (vec (map #(update-in % [:type] f)
+                                                  (:fields schema))))
         schema)
     :else schema))
 
@@ -426,11 +432,11 @@
         (swap! named-types conj name)
         schema))
     (traverse-schema schema flatten-named-types)))
-        
+
 (defn avro-schema
   "Convert a simple-avro or json string schema to Avro schema object."
   [schema]
-  (cond 
+  (cond
     (instance? Schema schema)
       schema
     (string? schema)

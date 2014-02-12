@@ -1,5 +1,6 @@
 (ns simple-avro.api
-  {:doc "Higher level API that supports custom types definition and serialization."}
+  {:doc """Higher level API
+         that supports custom types definition and serialization."""}
   (:use (simple-avro core schema))
   (:import (java.util Date UUID)))
 
@@ -49,4 +50,3 @@
 (defmacro avro-maybe
   [type]
   `(avro-union ~type avro-null))
-

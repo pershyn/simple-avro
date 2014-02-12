@@ -98,4 +98,3 @@
   [name size & [opts]]
   `(def ~name
      (avro-fixed ~(str name) ~size ~opts)))
-

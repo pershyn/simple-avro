@@ -36,27 +36,29 @@
 ;
 (comment
 
-	(defn write-read-data
-	  []
-	  (let [tmp-file (str (System/getProperty "java.io.tmpdir") "test" (rand-int 1000) ".avro")]
-	    (let [writer   (avro-writer tmp-file Test)]
-	      (println "Creating temp file " tmp-file)
-	      (doseq [rec (apply concat (repeat 1000 test-records))]
-	        (write writer rec))
-	      (close writer))
-	    (println "Reading " tmp-file)
-	    (let [reader (avro-reader tmp-file)]
-	      (loop [nx (has-next reader)]
-	        (when nx
-	          (println "Read     " (read-next reader))
-	          (println "Position " (position reader))
-	          (recur (has-next reader))))
-	      (close reader))
-	    (println "Deleting " tmp-file)
-	    (.delete (java.io.File. tmp-file))))
-	
-	
-	(deftest writer-reader-test
-	  (write-read-data))
+  (defn write-read-data
+    []
+    (let [tmp-file (str (System/getProperty "java.io.tmpdir")
+                        "test"
+                        (rand-int 1000)
+                        ".avro")]
+      (let [writer   (avro-writer tmp-file Test)]
+        (println "Creating temp file " tmp-file)
+        (doseq [rec (apply concat (repeat 1000 test-records))]
+          (write writer rec))
+        (close writer))
+      (println "Reading " tmp-file)
+      (let [reader (avro-reader tmp-file)]
+        (loop [nx (has-next reader)]
+          (when nx
+            (println "Read     " (read-next reader))
+            (println "Position " (position reader))
+            (recur (has-next reader))))
+        (close reader))
+      (println "Deleting " tmp-file)
+      (.delete (java.io.File. tmp-file))))
 
-)
+
+  (deftest writer-reader-test
+    (write-read-data))
+  )
