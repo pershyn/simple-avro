@@ -12,12 +12,12 @@ Clojure wrapper for Avro schema and serialization.
 
 ### 0.0.6
 
-* By default keywords will be used when deserializing maps, records, and the like. Effectively, anything that is turned from an avro-type into a clojure map-type will use keywords as keys. __NOTE__ this may break current implementations which rely upon string keys.
+* __BREAKING CHANGES:__ By default keywords will be used when deserialising maps, records, and the like. Effectively, anything that is turned from an avro-type into a clojure map-type will use keywords as keys. This may break current implementations which rely upon string keys.
 * Updated to work with [Avro 1.7.2](avro.apache.org/docs/1.7.2/spec.html).
 
 ### 0.0.5
 
-* Forked from [asmyczek](https://github.com/asmyczek/simple-avro) since it appears to be abandon.
+* Forked from [asmyczek](https://github.com/asmyczek/simple-avro) by [Roxxi](https://github.com/Roxxi/simple-avro) since original appeared to be abandon.
 
 ## Quick Start
 
