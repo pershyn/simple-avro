@@ -16,6 +16,7 @@
   :city    avro-string
   :state   State
   :zip     avro-int
+  :things (avro-array (avro-union avro-string avro-int))
   :country Country)
 
 (defavro-record Person
@@ -37,22 +38,65 @@
   (avro-array Contact))
 
 
-; Sample records
+;; Sample records
 
 (def address-book
+  [{:first  "Mike"
+    :last    "Foster"
+    :address {:street  "South Park Str. 14"
+              :city    "Wasco"
+              :state   "CA"
+              :zip     95171
+              :things [5 "hello"]
+              :country "USA"}
+    :email   "mike@home.com"
+    :phone   nil}])
+
+(def address-book-string
   [{"first"  "Mike"
    "last"    "Foster"
    "address" {"street"  "South Park Str. 14"
               "city"    "Wasco"
               "state"   "CA"
               "zip"     95171
+              "things" [5 "hello"]
               "country" "USA"}
    "email"   "mike@home.com"
    "phone"   nil}])
 
-; Serialization
+(def address-book-mixed
+  [{"first"  "Mike"
+    :last    "Foster"
+    "address" {"street"  "South Park Str. 14"
+               :city    "Wasco"
+               "state"   "CA"
+               "zip"     95171
+               :things [5 "hello"]
+               "country" "USA"}
+    "email"   "mike@home.com"
+    :phone   nil}])
 
-(let [packed-address-book   (pack AddressBook address-book)
+
+
+
+;; Serializations
+
+;; keywords version
+(let [packed-address-book (pack AddressBook address-book)
       unpacked-address-book (unpack AddressBook packed-address-book)]
   (assert (= address-book unpacked-address-book)))
 
+;; string version
+(let [packed-address-book-string   (pack AddressBook address-book-string)
+      unpacked-address-book-string
+      (unpack AddressBook packed-address-book-string :str-key true)]
+  (assert (= address-book-string unpacked-address-book-string)))
+
+;; mixed keywords and strings version - doesn't matter if string and keys are mixed
+(let [packed-address-book-mixed   (pack AddressBook address-book-mixed)
+      unpacked-address-book-mixed (unpack AddressBook packed-address-book-mixed)]
+  (assert (= address-book unpacked-address-book-mixed)))
+
+(let [packed-address-book-mixed   (pack AddressBook address-book-mixed)
+      unpacked-address-book-mixed (unpack AddressBook packed-address-book-mixed :str-key true)]
+  (assert (= address-book-string unpacked-address-book-mixed)))

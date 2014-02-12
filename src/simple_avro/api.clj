@@ -18,9 +18,9 @@
 
 (extend-type Date
   AvroTypeable
-    (avro-pack [date] {"time" (.getTime date)}))
+    (avro-pack [date] {:time (.getTime date)}))
 
-(def-unpack-avro AvroDate (fn [rec] (Date. (long (rec "time")))))
+(def-unpack-avro AvroDate (fn [rec] (Date. (long (rec :time)))))
 
 ; UUID
 
@@ -36,10 +36,10 @@
 
 (extend-type UUID
   AvroTypeable
-    (avro-pack [uuid] {"uuid" (uuid-2-bytes uuid)}))
+    (avro-pack [uuid] {:uuid (uuid-2-bytes uuid)}))
 
 (def-unpack-avro avroUUID
-  #(let [bb    (java.nio.ByteBuffer/wrap (% "uuid"))
+  #(let [bb    (java.nio.ByteBuffer/wrap (% :uuid))
          most  (.getLong bb)
          least (.getLong bb)]
      (UUID. most least)))

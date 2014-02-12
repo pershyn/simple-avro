@@ -24,11 +24,11 @@
 ; Default implementations
 (extend-type Object
   AvroTypeable
-    (avro-pack [this] this))
-    
+  (avro-pack [this] this))
+
 (extend-type nil
   AvroTypeable
-    (avro-pack [_] nil))
+  (avro-pack [_] nil))
 
 (declare pack avro-schema)
 
@@ -41,67 +41,112 @@
        (throw (Exception. (apply str ~(vec (butlast msg))) l#))
        (throw (Exception. (str ~@msg))))))
 
-(def #^{:private true}
-  *packers*
-  {Schema$Type/NULL     (fn pack-nil     [#^Schema schema obj] (if (nil? obj) nil (throw (Exception. (str "'" obj "' is not nil")))))
-   Schema$Type/BOOLEAN  (fn pack-boolean [#^Schema schema obj] (boolean obj)) 
-   Schema$Type/INT      (fn pack-int     [#^Schema schema obj] (int obj))
-   Schema$Type/LONG     (fn pack-long    [#^Schema schema obj] (long obj))
-   Schema$Type/FLOAT    (fn pack-float   [#^Schema schema obj] (float obj))
-   Schema$Type/DOUBLE   (fn pack-double  [#^Schema schema obj] (double obj))
-   Schema$Type/BYTES    (fn pack-bytes   [#^Schema schema obj] (bytes obj))
+;;
+;; Packing multimethod
+;;
+(defmulti pack-obj
+  "Packs an object for the particular schema-type"
+  (fn pack-obj-dispatch [#^Schema schema obj]
+    (.getType schema)))
 
-   Schema$Type/STRING   (fn pack-string  [#^Schema schema obj] (if (string? obj)
-                                           (Utf8. (str obj))
-                                           (throw (Exception. (str "'" obj "' is not a string.")))))
-   Schema$Type/FIXED    (fn pack-fixed [#^Schema schema obj] (doto (GenericData$Fixed. schema)
-                                                    (.bytes obj)))
+(defmethod pack-obj Schema$Type/NULL
+  [#^Schema schema obj]
+  (if (nil? obj)
+      nil
+      (throw (Exception. (str "'" obj "' is not nil")))))
 
-   Schema$Type/ENUM     (fn pack-enum [#^Schema schema obj] 
-                          (if-let [enum (some #{obj} (.getEnumSymbols schema))]
-                            (GenericData$EnumSymbol. schema enum)
-                            (throw-with-log "Enum does not define '" obj "'.")))
+(defmethod pack-obj Schema$Type/BOOLEAN
+  [#^Schema schema obj]
+  (boolean obj))
 
-   Schema$Type/UNION    (fn pack-union [#^Schema schema obj] 
-                          (loop [schemas (seq (.getTypes schema))]
-                            (if (empty? schemas)
-                              (throw-with-log "No union type defined for object '" obj "'.")
-                              (let [#^Schema schema (first schemas)]
-                                (if (= (.getType schema) Schema$Type/NULL)
-                                  (if (nil? obj)
-                                    nil
-                                    (recur (next schemas)))
-                                  (let [rec (try 
-                                              (pack schema obj)
-                                              (catch Exception e :not-matching-union-type))]
-                                    (if (= rec :not-matching-union-type)
-                                      (recur (next schemas))
-                                      rec)))))))
+(defmethod pack-obj Schema$Type/INT
+  [#^Schema schema obj]
+  (int obj))
 
-   Schema$Type/ARRAY    (fn pack-array [#^Schema schema obj] 
-                          (let [type-schema (.getElementType schema)
-                                array       (GenericData$Array. (count obj) schema)]
-                            (doseq [e obj] (.add array (pack type-schema e)))
-                            array))
+(defmethod pack-obj Schema$Type/LONG
+  [#^Schema schema obj]
+  (long obj))
 
-   Schema$Type/MAP      (fn pack-map [#^Schema schema obj] 
-                          (let [type-schema (.getValueType schema)]
-                            (persistent! (reduce (fn [m [k v]] (assoc! m k (pack type-schema v))) (transient {}) obj))))
+(defmethod pack-obj Schema$Type/FLOAT
+  [#^Schema schema obj]
+  (float obj))
 
-   Schema$Type/RECORD   (fn pack-record [#^Schema schema obj]
-                          (if-let [ks (keys obj)]
-                            (try
-                            (let [record (GenericData$Record. schema)]
-                              (doseq [#^String k ks]
-                                (let [field (.getField schema k)]
-                                  (when (nil? field)
-                                    (throw (Exception. (str "Null field " k " schema " schema))))
-                                  (.put record k (pack (.schema field) (obj k)))))
-                              record)
-                              (catch Exception e
-                                (throw (Exception. (str ">>> " schema " - " obj) e))))))
+(defmethod pack-obj Schema$Type/DOUBLE
+  [#^Schema schema obj]
+  (double obj))
 
-    })
+(defmethod pack-obj Schema$Type/BYTES
+  [#^Schema schema obj]
+  (bytes obj))
+
+(defmethod pack-obj Schema$Type/STRING
+  [#^Schema schema obj]
+  (if (string? obj)
+    (Utf8. (str obj))
+    (throw (Exception. (str "'" obj "' is not a string.")))))
+
+(defmethod pack-obj Schema$Type/FIXED
+  [#^Schema schema obj]
+  (doto (GenericData$Fixed. schema) (.bytes obj)))
+
+(defmethod pack-obj Schema$Type/ENUM
+  [#^Schema schema obj]
+  (if-let [enum (some #{obj} (.getEnumSymbols schema))]
+    (GenericData$EnumSymbol. schema enum)
+    (throw-with-log "Enum does not define '" obj "'.")))
+
+(defmethod pack-obj Schema$Type/UNION
+  [#^Schema schema obj]
+  (loop [schemas (seq (.getTypes schema))]
+    (if (empty? schemas)
+      (throw-with-log "No union type defined for object '" obj "'.")
+      (let [#^Schema schema (first schemas)]
+        (if (= (.getType schema) Schema$Type/NULL)
+          ;; For example we have a schema with [NULL, Real-type]. When trying to
+          ;; determine data type to pack data into union - NULL always works
+          ;; because it is present in schemas and we can pack anything to NULL..
+          ;; So need to check if the passed data is really NULL.
+          (if (nil? obj)
+            nil
+            (recur (next schemas)))
+          (let [rec (try
+                      (pack schema obj)
+                      (catch Exception e :not-matching-union-type))]
+            (if (= rec :not-matching-union-type)
+              (recur (next schemas))
+              rec)))))))
+
+(defmethod pack-obj Schema$Type/ARRAY
+  [#^Schema schema obj]
+  (let [type-schema (.getElementType schema)
+        array       (GenericData$Array. (count obj) schema)]
+    (doseq [e obj] (.add array (pack type-schema e)))
+    array))
+
+(defmethod pack-obj Schema$Type/MAP
+  [#^Schema schema obj]
+  (let [type-schema (.getValueType schema)]
+    (persistent! (reduce (fn [m [k v]] (assoc! m (name k) (pack type-schema v)))
+                         (transient {})
+                         obj))))
+
+(defmethod pack-obj Schema$Type/RECORD
+  [#^Schema schema obj]
+  (if-let [ks (keys obj)]
+    (try
+      (let [record (GenericData$Record. schema)]
+        (doseq [#^String k ks]
+          (let [field (.getField schema (name k))]
+            (when (nil? field)
+              (throw (Exception. (str "Null field " k " schema " schema))))
+            (.put record (name k) (pack (.schema field) (obj k)))))
+        record)
+      (catch Exception e
+        (throw (Exception. (str ">>> " schema " - " obj) e))))))
+
+(defmethod pack-obj :default
+  [#^Schema schema obj]
+  (throw-with-log "No pack defined for type '" (.getType schema) "'."))
 
 (defn- encode-to
   [#^Schema schema obj encoder result]
@@ -115,17 +160,16 @@
 (defn pack
   [schema obj & [encoder]]
   (let [#^Schema schema (avro-schema schema)
-                 type   (.getType schema)
-                 encode (or encoder (fn [_ obj] obj))
-                 packer (*packers* type)
-                 obj    (avro-pack obj)]
-    (if packer
-      (try
-        (encode schema (packer schema obj))
-        (catch Exception e
-          (throw-with-log "Exception reading object '" obj "' for schema '" schema "'." e)))
-      (throw-with-log "No pack defined for type '" type "'."))))
+        encode (or encoder (fn default-encoder [_ obj] obj))
+        obj    (avro-pack obj)]
+    (try
+      (encode schema (pack-obj schema obj))
+      (catch Exception e
+        (throw-with-log "Exception reading object '" obj "' for schema '" schema "'." e)))))
 
+;;
+;; Encoders
+;;
 (def json-encoder
   (fn json-encoder-fn [#^Schema schema obj]
     (encode-to schema obj
@@ -147,79 +191,182 @@
 ;
 
 ; Unpack multi method
-(defmulti unpack-avro (fn [schema obj] (.getName schema)))
+(defmulti unpack-avro
+  (fn [schema obj]
+    (.getName #^Schema schema)))
 
 (defmethod unpack-avro :default [schema obj] obj)
 
 (declare unpack-impl json-schema)
 
-(defn- unpack-record-fields
-  "Unpack only provided fields from record object."
-  [#^Schema schema #^GenericData$Record obj fields rmap]
-  (loop [[f & fs] fields m rmap]
-    (if f
-      (if (coll? f)
-        (if-let [#^Schema$Field fd (.getField schema (name (first f)))]
-          (let [k (.name fd)]
-            (if (next f)
-              (recur fs (assoc m k (unpack-record-fields (.schema fd) (.get obj k) (rest f) (m k))))
-              (recur fs (assoc m k (unpack-impl (.schema fd) (.get obj k))))))
-          (throw-with-log "No field for name '" (first f) "' exists in schema " (json-schema schema)))
-        (if-let [#^Schema$Field fd (.getField schema (name f))]
-          (let [k (.name fd)]
-            (recur fs (assoc m k (unpack-impl (.schema fd) (.get obj k)))))
-          (throw-with-log "No field for name '" f "' exists in schema " (json-schema schema))))
-      m)))
+;;
+;; Unpacking multimethod
+;;
+(defmulti unpack-obj
+  "Unpacks an object according to its schema type"
+  (fn [#^Schema schema obj make-key]
+    (.getType schema)))
 
-(defn- unpack-all-record-fields
-  "Unpack entire record object."
-  [#^Schema schema #^GenericData$Record obj]
-  (persistent! (reduce (fn [m #^Schema$Field f]
-            (let [k (.name f)]
-              (assoc! m k (unpack-impl (.schema f) (.get obj k)))))
-          (transient {}) (.getFields schema))))
+(defmethod unpack-obj Schema$Type/NULL
+  [#^Schema schema obj make-key]
+  (if obj (throw (Exception. "Nil expected."))))
 
-(def #^{:private true}
-  *unpackers*
-  {Schema$Type/NULL     (fn unpack-nil     [#^Schema schema obj] (if obj (throw (Exception. "Nil expected."))))
-   Schema$Type/BOOLEAN  (fn unpack-boolean [#^Schema schema obj] (boolean obj))
-   Schema$Type/INT      (fn unpack-int     [#^Schema schema obj] (int obj))
-   Schema$Type/LONG     (fn unpack-long    [#^Schema schema obj] (long obj))
-   Schema$Type/FLOAT    (fn unpack-float   [#^Schema schema obj] (float obj))
-   Schema$Type/DOUBLE   (fn unpack-double  [#^Schema schema obj] (double obj))
-   Schema$Type/BYTES    (fn unpack-bytes   [#^Schema schema obj] (bytes obj))
-   Schema$Type/FIXED    (fn unpack-fixed   [#^Schema schema #^GenericData$Fixed obj] (.bytes obj))
-   Schema$Type/ENUM     (fn unpack-enum    [#^Schema schema obj] (str obj))
+(defmethod unpack-obj Schema$Type/BOOLEAN
+  [#^Schema schema obj make-key]
+  (boolean obj))
 
-   Schema$Type/STRING   (fn unpack-stirng  [#^Schema schema obj] (if (instance? Utf8 obj)
-                                           (str obj)
-                                           (throw (Exception. (str "Object '" obj "' is not a Utf8.")))))
+(defmethod unpack-obj Schema$Type/INT
+  [#^Schema schema obj make-key]
+  (int obj))
 
-   Schema$Type/UNION    (fn unpack-union   [#^Schema schema obj] 
-                          (loop [schemas (.getTypes schema)]
-                            (if (empty? schemas)
-                              (throw-with-log "No union type defined for object '" obj "'.")
-                              (let [rec (try
-                                          (unpack-impl (first schemas) obj)
-                                          (catch Exception e :not-matching-untion-type))]
-                                (if (not= rec :not-matching-untion-type)
-                                  rec
-                                  (recur (next schemas)))))))
+(defmethod unpack-obj Schema$Type/LONG
+  [#^Schema schema obj make-key]
+  (long obj))
 
-   Schema$Type/ARRAY    (fn unpack-array [#^Schema schema obj] 
-                          (let [type-schema (.getElementType schema)]
-                            (vec (map #(unpack-impl type-schema %) obj))))
+(defmethod unpack-obj Schema$Type/FLOAT
+  [#^Schema schema obj make-key]
+  (float obj))
 
-   Schema$Type/MAP      (fn unpack-map [#^Schema schema obj] 
-                          (let [type-schema (.getValueType schema)]
-                            (reduce (fn [m [k v]] (assoc m (str k) (unpack-impl type-schema v))) {} obj)))
+(defmethod unpack-obj Schema$Type/DOUBLE
+  [#^Schema schema obj make-key]
+  (double obj))
 
-   Schema$Type/RECORD   (fn unpack-record [#^Schema schema #^GenericData$Record obj fields]
-                          (if (empty? fields)
-                            (unpack-all-record-fields schema obj)
-                            (unpack-record-fields schema obj fields {})))
+(defmethod unpack-obj Schema$Type/BYTES
+  [#^Schema schema obj make-key]
+  (bytes obj))
 
-    })
+(defmethod unpack-obj Schema$Type/FIXED
+  [#^Schema schema #^GenericData$Fixed obj make-key]
+  (.bytes obj))
+
+(defmethod unpack-obj Schema$Type/ENUM
+  [#^Schema schema obj make-key]
+  (str obj))
+
+(defmethod unpack-obj Schema$Type/STRING
+  [#^Schema schema obj make-key]
+  (if (instance? Utf8 obj)
+    (str obj)
+    (throw (Exception. (str "Object '" obj "' is not a Utf8.")))))
+
+;; TODO: Maybe there is a similar bug to one observed on decoding objects?
+(defmethod unpack-obj Schema$Type/UNION
+  [#^Schema schema obj make-key]
+  (loop [schemas (.getTypes schema)]
+    (if (empty? schemas)
+      (throw-with-log "No union type defined for object '" obj "'.")
+      (let [rec (try
+                  (unpack-impl (first schemas) obj make-key)
+                  (catch Exception e :not-matching-union-type))]
+        (if (not= rec :not-matching-union-type)
+          rec
+          (recur (next schemas)))))))
+
+(defmethod unpack-obj Schema$Type/ARRAY
+  [#^Schema schema obj make-key]
+  (let [type-schema (.getElementType schema)]
+    (vec (map #(unpack-impl type-schema % make-key) obj))))
+
+(defmethod unpack-obj Schema$Type/MAP
+  [#^Schema schema obj make-key]
+  (let [type-schema (.getValueType schema)]
+    (persistent!
+      (reduce
+        (fn [m [k v]]
+          (assoc! m (make-key k) (unpack-impl type-schema v make-key)))
+        (transient {}) obj))))
+
+(defmethod unpack-obj Schema$Type/RECORD
+  [#^Schema schema #^GenericData$Record obj make-key]
+  (persistent!
+    (reduce
+      (fn [m #^Schema$Field f]
+        (let [k (.name f)]
+          (assoc! m (make-key k) (unpack-impl (.schema f) (.get obj k) make-key))))
+      (transient {}) (.getFields schema))))
+
+(defmethod unpack-obj :default
+  [#^Schema schema obj make-key]
+  (throw-with-log "No unpack defined for type '" (.getType schema) "'."))
+
+(defn- unpack-impl
+  [#^Schema schema obj key-maker]
+  (unpack-avro schema (unpack-obj schema obj key-maker)))
+
+(defn- unpack-particular-field-path
+  [#^Schema schema #^GenericData$Record obj make-key field-path]
+  (let [[field & rest-fields] field-path]
+    (if (not field)
+      (unpack-impl schema obj make-key)
+      (let [field-name (name field)]
+        (if-let [#^Schema$Field fd (.getField schema field-name)]
+          `{~(make-key field-name)
+            ~(unpack-particular-field-path
+               (.schema fd) (.get obj (.name fd)) make-key rest-fields)}
+          (throw-with-log
+            "No field for name '" field-name "' exists in schema " (json-schema schema)))))))
+
+(defn- deep-merge
+  "like merge... but more recursive"
+  [v1 v2]
+  (if (and (map? v1) (map? v2))
+    (merge-with deep-merge v1 v2)
+    v2))
+
+;; This is probably un-optimal, but it sure made the code a lot simpler to manage
+(defn- unpack-particular-field-paths
+  "We assume that field-paths here have already been pathified. We also assume
+   the paths are unique, otherwise, the last one processed will win."
+  [#^Schema schema #^GenericData$Record rec make-key field-paths]
+  (apply
+    (partial merge-with deep-merge) ;; deep-merge will merge sub maps at corresponding locations
+    (map (partial unpack-particular-field-path schema rec make-key) field-paths)))
+
+(defn- unpacker-key-maker
+  "If we should make string keys, we will, otherwise, we'll make keyword keys"
+  [should-make-string-keys?]
+  (if should-make-string-keys?
+    str
+    #(keyword (str %))))
+
+(defn- record-schema?
+  [#^Schema schema]
+  (= (.getType schema) Schema$Type/RECORD))
+
+(defn- pathify [key-or-keys]
+  (if (coll? key-or-keys)
+    key-or-keys
+    [key-or-keys]))
+
+(defn unpack
+  "Unpack a particular Avro Object with a given schema.
+   Optional keyword arguements:
+  - :fields [:field1 [:field2 :innerfield] :field3]
+    If the schema is of an Avro Record type, and the object is a record,
+    select only the specified fields will be extracted.
+    Moreover, if a 'field-specification' is a collection of keys
+    as demonstrated in the second element above, this is treated as a property
+    path (e.g. field2.innerfield)
+  - :use-keywords
+    If specified as false, the result map will be generated with strings as keys
+    for property names as opposed to keywords
+  - :decoder
+    a function to decode an un-avroed property, perhaps into something that can be
+    manipulated in code further down."
+  [schema obj
+   & {:keys [decoder fields str-key]
+      :or {:fields [], :decoder false, :str-key false}}]
+  (let [#^Schema schema   (avro-schema schema)
+        decode   (or decoder (fn [_ obj] obj))
+        obj      (decode schema obj)
+        key-maker (unpacker-key-maker str-key)]
+    (try
+      (if (and fields (record-schema? schema))
+        ;; pathify fields for uniformity
+        (unpack-particular-field-paths schema obj key-maker (map pathify fields))
+        (unpack-impl schema obj key-maker))
+      (catch Exception e
+        (throw-with-log "Exception unpacking object '" obj "' for schema '" schema "'." e)))))
 
 (defn- decode-from
   [schema obj decoder]
@@ -227,37 +374,12 @@
         decoder (decoder schema obj)]
     (.read reader nil decoder)))
 
-(defn- unpack-impl
-  ([#^Schema schema obj]
-    (unpack-impl schema obj nil))
-  ([#^Schema schema obj fields]
-    (let [type     (.getType schema)
-          unpacker (*unpackers* type)]
-      (if unpacker
-        (let [obj (if (= type Schema$Type/RECORD)
-                    (unpacker schema obj fields)
-                    (unpacker schema obj))]
-          (unpack-avro schema obj))
-        (throw-with-log "No unpack defined for type '" type "'.")))))
-
-(defn unpack
-  ([schema obj]
-    (unpack schema obj nil nil))
-  ([schema obj decoder & [fields]]
-  (let [#^Schema schema   (avro-schema schema)
-                 decode   (or decoder (fn [_ obj] obj))
-                 obj      (decode schema obj)]
-    (try
-      (unpack-impl schema obj fields)
-      (catch Exception e
-        (throw-with-log "Exception unpacking object '" obj "' for schema '" schema "'." e))))))
-
 (def json-decoder
   (fn json-decoder-fn [#^Schema schema obj]
     (decode-from schema obj
-      (fn decode-from-json [#^Schema schema #^String obj]
-        (let [is (ByteArrayInputStream. (.getBytes obj "UTF-8"))]
-          (.jsonDecoder (DecoderFactory/get) schema obj))))))
+                 (fn decode-from-json [#^Schema schema #^String obj]
+                   (let [is (ByteArrayInputStream. (.getBytes obj "UTF-8"))]
+                     (.jsonDecoder (DecoderFactory/get) schema obj))))))
 
 (def binary-decoder
   (let [factory (DecoderFactory/defaultFactory)
@@ -326,4 +448,3 @@
   [schema & [opts]]
   (let [pretty (or (:pretty opts) false)]
     (.toString #^Schema (avro-schema schema) pretty)))
-
