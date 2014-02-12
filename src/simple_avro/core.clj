@@ -51,9 +51,7 @@
 
 (defmethod pack-obj Schema$Type/NULL
   [#^Schema schema obj]
-  (if (nil? obj)
-      nil
-      (throw (Exception. (str "'" obj "' is not nil")))))
+  nil) ;; packing anything to NULL (even valid object) should give NULL
 
 (defmethod pack-obj Schema$Type/BOOLEAN
   [#^Schema schema obj]

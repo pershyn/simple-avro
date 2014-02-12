@@ -7,3 +7,5 @@ clojure*.jar
 .project
 .classpath
 .settings
+.lein-failures
+target

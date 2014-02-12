@@ -17,10 +17,12 @@
   (is (= (pack avro-double  (double 2.5)) (double 2.5)))
   (is (= (str (pack avro-string  "test")) "test")))
 
-; Some types
+;; Defining some types
 (def bool-array (avro-array avro-boolean))
 (def int-map    (avro-map avro-int))
 (def a-union    (avro-union avro-string avro-int avro-null))
+(def a-n-union ;; union started with null
+  (avro-union avro-null avro-string avro-int))
 
 (defavro-fixed MyFixed 2)
 
@@ -35,11 +37,11 @@
   :f2 avro-string)
 
 (defavro-record List
-  :value avro-int
+  :value avro-int 
   :next  (avro-union "List" avro-null))
 
 (def map-in-map 
-  {:value 1
+  {:value 1 
    :next  {:value 2
            :next  {:value 3
                    :next  nil}}})
@@ -67,6 +69,9 @@
 
     (is (= (unpack a-union (pack a-union "test" ~encoder) :decoder ~decoder) "test"))
     (is (= (unpack a-union (pack a-union 10 ~encoder) :decoder ~decoder) 10))
+
+    (is (= (unpack a-n-union (pack a-n-union "test" ~encoder) :decoder ~decoder) "test"))
+    (is (= (unpack a-n-union (pack a-n-union 10 ~encoder) :decoder ~decoder) 10))
 
     (let [pu# (unpack MyFixed (pack MyFixed (byte-array [(byte 1) (byte 2)])  ~encoder) :decoder ~decoder)]
       (is (= (nth pu# 0) 1))

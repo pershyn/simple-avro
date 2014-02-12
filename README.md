@@ -111,5 +111,5 @@ For more details see examples and unit tests.
     <dependency>
       <groupId>simple-avro</groupId>
       <artifactId>simple-avro</artifactId>
-      <version>0.0.7</version>
+      <version>0.0.5</version>
     </dependency>
